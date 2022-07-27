@@ -7,7 +7,12 @@ email: sabbir.amin@goava.com, sabbiramin.cse11ruet@gmail.com
 
 """
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
+from waitress import serve
+
+OK = 'OK'
+ERROR = 'ERROR'
+NOT_A_VALID_COMMAND = 'NOT_A_VALID_COMMAND'
 
 
 class Server:
@@ -18,37 +23,48 @@ class Server:
         self.port = port
         self.debug = debug
 
-        def _set(*args):
-            for arg in args:
-                print(arg)
-            key = args[0]
-            val = args[1]
-            self.db[key] = val
-            return 'OK'
+        def parse_request(request, arg):
+            data = request.get_json()
+            return data.get(arg, None)
 
-        def _get(*args):
-            key = args[0]
+        def _set(request):
+            cmd, key, val = parse_request(request, 'cmd'), parse_request(request, 'key'), parse_request(request,
+                                                                                                        'value')
+            if key and val:
+                self.db[key] = val
+                return OK
+            else:
+                return ERROR
+
+        def _get(request):
+            key = parse_request(request, 'key')
             try:
                 return self.db[key]
             except Exception as e:
-                return 'None'
+                print('Error:', str(e))
+                return ERROR
 
         self.command_handler = {'set': _set, 'get': _get}
 
         def handler():
-            data = request.get_json()
-            cmd, key, value = data.get('cmd'), data.get('key'), data.get('value')
-            resp = self.command_handler[cmd](key, value)
-            print('resp:', resp)
-            return resp
+            cmd = parse_request(request, 'cmd')
+            try:
+                resp = self.command_handler[cmd](request)
+                print('resp:', resp)
+                return resp
+            except KeyError:
+                return NOT_A_VALID_COMMAND
 
         self.app.add_url_rule("/", view_func=handler, methods=['POST'])
 
-    def run(self):
-        self.app.run(host=self.host, port=self.port, debug=self.debug)
+    def run(self, multi=False):
+        if not multi:
+            self.app.run(host=self.host, port=self.port, debug=self.debug)
+        else:
+            serve(self.app, port=self.port, host=self.host, max_request_body_size=1073741824 * 10,
+                  inbuf_overflow=1073741824 * 10)
 
 
 if __name__ == '__main__':
     server = Server()
-    server.run()
-
+    server.run(multi=True)
