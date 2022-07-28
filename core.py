@@ -20,6 +20,7 @@ from waitress import serve
 
 OK = 'OK'
 ERROR = 'ERROR'
+WRONG_TYPE = 'WRONGTYPE Operation against a key holding the wrong kind of value'
 NOT_A_VALID_COMMAND = 'NOT_A_VALID_COMMAND'
 TIME_DELTA_TO_FORCE_SNAPSHOT = 300
 DUMP_FILE_NAME = 'db.json'
@@ -115,7 +116,39 @@ class Server:
             }
             return jsonify(resp), 200
 
-        self.command_handler = {'set': _set, 'get': _get, 'info': _info}
+        def _sadd(request):
+            cmd, key, val = parse_request(request, 'cmd'), \
+                            parse_request(request, 'key'), \
+                            parse_request(request, 'value')
+            if key and val:
+                try:
+                    # this the same key and same cmd, so there were values here
+                    if self.db[key] and self.db[key]['cmd'] == cmd:
+                        # This was a list in the db now cast it to set
+                        pre_val = set(self.db[key]['val'])
+                        pre_val.add(val)
+                        new_list = list(pre_val)
+                        self.db[key]['val'] = new_list
+                        self.write_count += 1
+                        return jsonify(OK), 200
+                    else:
+                        # The key exists, but it was under different cmd, So pass it.
+                        return jsonify(WRONG_TYPE), 400
+                except Exception as e:
+                    # Now there was no key.
+                    mset = set()
+                    mset.add(val)
+                    new_list = list(mset)
+                    self.db[key] = {
+                        'val': mset,
+                        'cmd': cmd,
+                        'created': get_current_time(),
+                    }
+                    self.write_count += 1
+                    return jsonify(OK), 200
+            return jsonify(ERROR), 400
+
+        self.command_handler = {'set': _set, 'get': _get, 'info': _info, 'sadd': _sadd}
 
         def handler():
             cmd = parse_request(request, 'cmd')
