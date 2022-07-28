@@ -102,6 +102,64 @@ class Server:
             }
             return json.dumps(resp)
 
+        def lpush(request):
+            cmd, key, val = parse_request(request, 'cmd'), \
+                            parse_request(request, 'key'), \
+                            parse_request(request, 'value')
+            if key and val:
+                try:
+                    # find if the key exists and cmd valid
+                    if self.db[key] and isinstance(self.db[key]['val'], list):
+                        pre_list: list = self.db[key]['val']
+                        new_list = list(set(pre_list.insert(0, val)))
+                        self.db[key] = {
+                            'val': new_list,
+                            'cmd': cmd,
+                            'key': key,
+                            'created': get_current_time()
+                        }
+                        return len(new_list)
+                except Exception as e:
+                    print('error:', str(e))
+                    new_list = list(set(val))
+                    self.db[key] = {
+                        'val': new_list,
+                        'cmd': cmd,
+                        'key': key,
+                        'created': get_current_time()
+                    }
+                    return len(new_list)
+            return ERROR
+
+        def rpush(request):
+            cmd, key, val = parse_request(request, 'cmd'), \
+                            parse_request(request, 'key'), \
+                            parse_request(request, 'value')
+            if key and val:
+                try:
+                    # find if the key exists and cmd valid
+                    if self.db[key] and isinstance(self.db[key]['val'], list):
+                        pre_list: list = self.db[key]['val']
+                        new_list = list(set(pre_list.append(val)))
+                        self.db[key] = {
+                            'val': new_list,
+                            'cmd': cmd,
+                            'key': key,
+                            'created': get_current_time()
+                        }
+                        return len(new_list)
+                except Exception as e:
+                    print('error:', str(e))
+                    new_list = list(set(val))
+                    self.db[key] = {
+                        'val': new_list,
+                        'cmd': cmd,
+                        'key': key,
+                        'created': get_current_time()
+                    }
+                    return len(new_list)
+            return ERROR
+
         self.command_handler = {'set': _set, 'get': _get, 'info': _info}
 
         def handler():
