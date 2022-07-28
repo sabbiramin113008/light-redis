@@ -159,7 +159,7 @@ class Client:
         body = {
             "cmd": "set",
             "key": key,
-            "value": json.dumps(value)
+            "value": value
         }
         return self.call(body)
 
