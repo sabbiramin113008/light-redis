@@ -102,7 +102,7 @@ class Server:
             }
             return json.dumps(resp)
 
-        def lpush(request):
+        def _lpush(request):
             cmd, key, val = parse_request(request, 'cmd'), \
                             parse_request(request, 'key'), \
                             parse_request(request, 'value')
@@ -118,7 +118,7 @@ class Server:
                             'key': key,
                             'created': get_current_time()
                         }
-                        return len(new_list)
+                        return str(len(new_list))
                 except Exception as e:
                     print('error:', str(e))
                     new_list = list(set(val))
@@ -128,10 +128,10 @@ class Server:
                         'key': key,
                         'created': get_current_time()
                     }
-                    return len(new_list)
+                    return str(len(new_list))
             return ERROR
 
-        def rpush(request):
+        def _rpush(request):
             cmd, key, val = parse_request(request, 'cmd'), \
                             parse_request(request, 'key'), \
                             parse_request(request, 'value')
@@ -147,7 +147,7 @@ class Server:
                             'key': key,
                             'created': get_current_time()
                         }
-                        return len(new_list)
+                        return str(len(new_list))
                 except Exception as e:
                     print('error:', str(e))
                     new_list = list(set(val))
@@ -157,10 +157,38 @@ class Server:
                         'key': key,
                         'created': get_current_time()
                     }
-                    return len(new_list)
+                    self.write_count += 1
+                    return str(len(new_list))
             return ERROR
 
-        self.command_handler = {'set': _set, 'get': _get, 'info': _info}
+        def _lrange(request):
+            cmd, key, start, stop = parse_request(request, 'cmd'),
+            parse_request(request, 'key'), parse_request(request, 'start'),
+            parse_request(request, 'stop')
+
+            if key and start and stop:
+                try:
+                    if self.db[key] and isinstance(self.db[key]['val'], list):
+                        pre_list: list = self.db[key]['val']
+                        tmp_list = pre_list[start:stop]
+                        return json.dumps(tmp_list)
+                    else:
+                        return ERROR
+                except Exception as e:
+                    print('Error:', str(e))
+                    return ERROR
+            return ERROR
+
+        self.command_handler = {
+            'set': _set,
+            'get': _get,
+            'info': _info,
+
+            'lpush': _lpush,
+            'rpush': _rpush,
+            'lrange': _lrange
+
+        }
 
         def handler():
             cmd = parse_request(request, 'cmd')
