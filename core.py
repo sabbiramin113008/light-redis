@@ -69,28 +69,41 @@ class Server:
             data = request.get_json()
             return data.get(arg, None)
 
+        def get_type(val):
+            if isinstance(val, dict):
+                return 'dict'
+            elif isinstance(val, str):
+                return 'str'
+            else:
+                return None
+
         def _set(request):
             cmd, key, val = parse_request(request, 'cmd'), \
                             parse_request(request, 'key'), \
                             parse_request(request, 'value')
             if key and val:
+                val_type = get_type(val)
+                if not val_type:
+                    return ERROR
+
                 self.db[key] = {
                     'val': val,
                     'cmd': cmd,
-                    'created': get_current_time()
+                    'created': get_current_time(),
+                    'val_type': val_type
                 }
                 self.write_count += 1
-                return OK
+                return jsonify(OK), 200
             else:
-                return ERROR
+                return jsonify(ERROR), 400
 
         def _get(request):
             key = parse_request(request, 'key')
             try:
-                return self.db[key]['val']
+                return jsonify(self.db[key]['val']), 200
             except Exception as e:
                 print('Error:', str(e))
-                return ERROR
+                return jsonify(ERROR), 400
 
         def _info(request):
             resp = {
@@ -100,18 +113,18 @@ class Server:
                 'db_file_name': self.db_file_name,
                 'last_db_snapshot_write': self.last_snapshot_time,
             }
-            return json.dumps(resp)
+            return jsonify(resp), 200
 
         self.command_handler = {'set': _set, 'get': _get, 'info': _info}
 
         def handler():
             cmd = parse_request(request, 'cmd')
             try:
-                resp = self.command_handler[cmd](request)
+                resp, status_code = self.command_handler[cmd](request)
                 print('resp:', resp)
-                return resp
+                return resp, status_code
             except KeyError:
-                return NOT_A_VALID_COMMAND
+                return jsonify(NOT_A_VALID_COMMAND), 400
 
         self.app.add_url_rule("/", view_func=handler, methods=['POST'])
 
@@ -145,15 +158,14 @@ class Client:
 
     def call(self, body):
         headers = {"Content-Type": "application/json"}
-        resp = 'ERROR'
         try:
             resp = requests.post(url=self.base_url,
                                  headers=headers,
                                  json=body)
-            return resp.text
+            return resp.json()
         except Exception as e:
             print('Error Calling Base:', str(e))
-        return resp
+        return ERROR
 
     def set(self, key: str, value: Any):
         body = {
@@ -169,14 +181,12 @@ class Client:
             "key": key,
         }
         resp = self.call(body)
-        if resp == 'ERROR':
-            return ERROR
-        return json.loads(resp)
+        return resp
 
     def info(self):
         body = {"cmd": "info"}
         resp = self.call(body)
-        return json.loads(resp)
+        return resp
 
 
 if __name__ == '__main__':

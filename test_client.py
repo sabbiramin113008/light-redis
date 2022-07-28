@@ -38,6 +38,16 @@ class ClientTest(unittest.TestCase):
         resp = client.info()
         print('Info Response:', resp)
 
+    def test_set_simple(self):
+        key = 'hello:world'
+        value = "WOW"
+        print(client.set(key, value))
+
+    def test_get_simple(self):
+        key = 'hello:world'
+        value = "WOW"
+        print(client.get(key))
+
 
 if __name__ == '__main__':
     unittest.main()
