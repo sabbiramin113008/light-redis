@@ -11,6 +11,9 @@ import codecs
 import json
 import time
 
+from typing import Any
+
+import requests
 from flask import Flask, request, jsonify
 from flask_apscheduler import APScheduler
 from waitress import serve
@@ -124,6 +127,39 @@ class Server:
 
             serve(self.app, port=self.port, host=self.host, max_request_body_size=1073741824 * 10,
                   inbuf_overflow=1073741824 * 10)
+
+
+class Client:
+    def __init__(self, base_url='http://localhost:5055'):
+        self.base_url = base_url
+
+    def call(self, body):
+        headers = {"Content-Type": "application/json"}
+        resp = 'ERROR'
+        try:
+            resp = requests.post(url=self.base_url, headers=headers, data=json.dumps(body))
+            return resp.text
+        except Exception as e:
+            print('Error Calling Base:', str(e))
+        return resp
+
+    def set(self, key: str, value: Any):
+        body = {
+            "cmd": "set",
+            "key": key,
+            "value": json.dumps(value)
+        }
+        return self.call(body)
+
+    def get(self, key: str):
+        body = {
+            "cmd": "get",
+            "key": key,
+        }
+        resp = self.call(body)
+        if resp == 'ERROR':
+            return ERROR
+        return json.loads(resp)
 
 
 if __name__ == '__main__':
