@@ -137,7 +137,9 @@ class Client:
         headers = {"Content-Type": "application/json"}
         resp = 'ERROR'
         try:
-            resp = requests.post(url=self.base_url, headers=headers, data=json.dumps(body))
+            resp = requests.post(url=self.base_url,
+                                 headers=headers,
+                                 json=body)
             return resp.text
         except Exception as e:
             print('Error Calling Base:', str(e))
