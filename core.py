@@ -6,8 +6,10 @@ date: 27 Jul 2022
 email: sabbir.amin@goava.com, sabbiramin.cse11ruet@gmail.com
 
 """
+import calendar
 import codecs
 import json
+import time
 
 from flask import Flask, request, jsonify
 from flask_apscheduler import APScheduler
@@ -16,7 +18,7 @@ from waitress import serve
 OK = 'OK'
 ERROR = 'ERROR'
 NOT_A_VALID_COMMAND = 'NOT_A_VALID_COMMAND'
-
+TIME_DELTA_TO_FORCE_SNAPSHOT = 300
 DUMP_FILE_NAME = 'db.json'
 
 
@@ -27,6 +29,10 @@ def dump_database(db):
             json.dump(db, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print('Error:', str(e))
+
+
+def get_current_time():
+    return calendar.timegm(time.gmtime())
 
 
 def load_database(db_file_name):
@@ -49,6 +55,7 @@ class Server:
         self.db = load_database(self.db_file_name)
 
         self.write_count = 0
+        self.last_snapshot_time = 0
         self.debug = debug
         self.scheduler = APScheduler()
         self.scheduler.api_enabled = True
@@ -60,12 +67,14 @@ class Server:
             return data.get(arg, None)
 
         def _set(request):
-            cmd, key, val = parse_request(request, 'cmd'), parse_request(request, 'key'), parse_request(request,
-                                                                                                        'value')
+            cmd, key, val = parse_request(request, 'cmd'), \
+                            parse_request(request, 'key'), \
+                            parse_request(request, 'value')
             if key and val:
                 self.db[key] = {
                     'val': val,
-                    'cmd': cmd
+                    'cmd': cmd,
+                    'created': get_current_time()
                 }
                 self.write_count += 1
                 return OK
@@ -104,6 +113,12 @@ class Server:
                     dump_database(db=self.db)
                     print('snapshots: Db Snapshot Taken')
                     self.write_count = 0
+                    self.last_snapshot_time = get_current_time()
+                elif self.write_count and get_current_time() - self.last_snapshot_time > TIME_DELTA_TO_FORCE_SNAPSHOT:
+                    dump_database(db=self.db)
+                    print('snapshots: Force Db Snapshot Taken')
+                    self.write_count = 0
+                    self.last_snapshot_time = get_current_time()
                 else:
                     print('snapshots: Not Enough Write Count')
 
