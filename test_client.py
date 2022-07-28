@@ -38,6 +38,25 @@ class ClientTest(unittest.TestCase):
         resp = client.info()
         print('Info Response:', resp)
 
+    def test_lpush(self):
+        key = "mma:legends"
+        value = "GSP"
+        resp = client.lpush(key, value)
+        print(resp)
+
+    def test_rpush(self):
+        key = "mma:legends"
+        value = "Tony Fergusonss"
+        resp = client.rpush(key, value)
+        print(resp)
+
+    def test_lrange(self):
+        key = "mma:legends"
+        start = 0
+        stop = 'inf'
+        resp = client.lrange(key, start, stop)
+        print(resp)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -111,23 +111,27 @@ class Server:
                     # find if the key exists and cmd valid
                     if self.db[key] and isinstance(self.db[key]['val'], list):
                         pre_list: list = self.db[key]['val']
-                        new_list = list(set(pre_list.insert(0, val)))
+                        pre_list.insert(0, val)
+                        new_list = list(set(pre_list))
                         self.db[key] = {
                             'val': new_list,
                             'cmd': cmd,
                             'key': key,
                             'created': get_current_time()
                         }
+                        self.write_count += 1
                         return str(len(new_list))
                 except Exception as e:
                     print('error:', str(e))
-                    new_list = list(set(val))
+                    new_list = [val]
                     self.db[key] = {
                         'val': new_list,
                         'cmd': cmd,
                         'key': key,
                         'created': get_current_time()
                     }
+                    self.write_count += 1
+                    self.last_snapshot_time = get_current_time()
                     return str(len(new_list))
             return ERROR
 
@@ -140,17 +144,19 @@ class Server:
                     # find if the key exists and cmd valid
                     if self.db[key] and isinstance(self.db[key]['val'], list):
                         pre_list: list = self.db[key]['val']
-                        new_list = list(set(pre_list.append(val)))
+                        pre_list.append(val)
+                        new_list = list(set(pre_list))
                         self.db[key] = {
                             'val': new_list,
                             'cmd': cmd,
                             'key': key,
                             'created': get_current_time()
                         }
+                        self.write_count += 1
                         return str(len(new_list))
                 except Exception as e:
                     print('error:', str(e))
-                    new_list = list(set(val))
+                    new_list = [val]
                     self.db[key] = {
                         'val': new_list,
                         'cmd': cmd,
@@ -162,15 +168,21 @@ class Server:
             return ERROR
 
         def _lrange(request):
-            cmd, key, start, stop = parse_request(request, 'cmd'),
-            parse_request(request, 'key'), parse_request(request, 'start'),
-            parse_request(request, 'stop')
+            cmd, key, start, stop = parse_request(request, 'cmd'), \
+                                    parse_request(request, 'key'), \
+                                    parse_request(request, 'start'), \
+                                    parse_request(request, 'stop')
 
             if key and start and stop:
                 try:
                     if self.db[key] and isinstance(self.db[key]['val'], list):
                         pre_list: list = self.db[key]['val']
-                        tmp_list = pre_list[start:stop]
+                        if stop == 'inf':
+
+                            tmp_list = pre_list[int(start):]
+                        else:
+                            tmp_list = pre_list[int(start):int(stop)]
+                        print('tmp list:', tmp_list)
                         return json.dumps(tmp_list)
                     else:
                         return ERROR
@@ -263,6 +275,27 @@ class Client:
         body = {"cmd": "info"}
         resp = self.call(body)
         return json.loads(resp)
+
+    def lpush(self, key: str, value: str):
+        body = {
+            "cmd": "lpush",
+            "key": key,
+            "value": value
+        }
+        return self.call(body)
+
+    def rpush(self, key: str, value: str):
+        body = {
+            "cmd": "rpush",
+            "key": key,
+            "value": value
+        }
+        return self.call(body)
+
+    def lrange(self, key: str, start: int, stop: str):
+        body = {"cmd": "lrange", "key": key, "start": start, "stop": stop}
+        resp = self.call(body)
+        return ERROR if resp == ERROR else resp
 
 
 if __name__ == '__main__':
