@@ -34,6 +34,10 @@ class ClientTest(unittest.TestCase):
         print('GET response:', resp, type(resp))
         self.assertEqual(value, resp)
 
+    def test_info(self):
+        resp = client.info()
+        print('Info Response:', resp)
+
 
 if __name__ == '__main__':
     unittest.main()

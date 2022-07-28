@@ -92,7 +92,17 @@ class Server:
                 print('Error:', str(e))
                 return ERROR
 
-        self.command_handler = {'set': _set, 'get': _get}
+        def _info(request):
+            resp = {
+                'keys_count': len(self.db.keys()),
+                'keys': list(self.db.keys()),
+                'writable_row': self.write_count,
+                'db_file_name': self.db_file_name,
+                'last_db_snapshot_write': self.last_snapshot_time,
+            }
+            return json.dumps(resp)
+
+        self.command_handler = {'set': _set, 'get': _get, 'info': _info}
 
         def handler():
             cmd = parse_request(request, 'cmd')
@@ -161,6 +171,11 @@ class Client:
         resp = self.call(body)
         if resp == 'ERROR':
             return ERROR
+        return json.loads(resp)
+
+    def info(self):
+        body = {"cmd": "info"}
+        resp = self.call(body)
         return json.loads(resp)
 
 
