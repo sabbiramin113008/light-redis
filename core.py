@@ -148,7 +148,13 @@ class Server:
                     return jsonify(OK), 200
             return jsonify(ERROR), 400
 
-        self.command_handler = {'set': _set, 'get': _get, 'info': _info, 'sadd': _sadd}
+        def _save(request):
+            cmd = parse_request(request, 'cmd')
+            # Now we don't want to save the file immediately, we just increment the self.write_count to 10
+            self.write_count = 11
+            return jsonify(OK), 200
+
+        self.command_handler = {'set': _set, 'get': _get, 'info': _info, 'sadd': _sadd, 'save': _save}
 
         def handler():
             cmd = parse_request(request, 'cmd')
@@ -223,6 +229,11 @@ class Client:
 
     def sadd(self, key: str, value: str):
         body = {"cmd": "sadd", "key": key, "value": value}
+        resp = self.call(body)
+        return resp
+
+    def save(self):
+        body = {"cmd": "save"}
         resp = self.call(body)
         return resp
 

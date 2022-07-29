@@ -53,6 +53,9 @@ class ClientTest(unittest.TestCase):
         value = "Shawn Michaels"
         print(client.sadd(key, value))
 
+    def test_save(self):
+        print(client.save())
+
 
 if __name__ == '__main__':
     unittest.main()
