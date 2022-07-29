@@ -9,6 +9,7 @@ email: sabbir.amin@goava.com, sabbiramin.cse11ruet@gmail.com
 import calendar
 import codecs
 import json
+import optparse
 import time
 
 from typing import Any
@@ -26,10 +27,10 @@ TIME_DELTA_TO_FORCE_SNAPSHOT = 300
 DUMP_FILE_NAME = 'db.json'
 
 
-def dump_database(db):
+def dump_database(db, dump_file_name='db.json'):
     print('db:', db)
     try:
-        with codecs.open('db.json', 'w', 'utf-8') as f:
+        with codecs.open(dump_file_name, 'w', 'utf-8') as f:
             json.dump(db, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print('Error:', str(e))
@@ -50,14 +51,29 @@ def load_database(db_file_name):
         return db
 
 
+def option_parsers():
+    parser = optparse.OptionParser()
+    parser.add_option('-H', '--host', default='localhost', dest='host', help='set the server host')
+    parser.add_option('-P', '--port', default=5055, dest='port', help='set the server host')
+    parser.add_option('-D', '--dump_file_name', default='db.json', dest='dump_file_name', help='Name JSON dump File')
+    parser.add_option('-T', '--time_to_check_snapshot', default=10, dest='time_to_check_snapshot',
+                      help='Set time(sec) to start taking snapshots of db')
+    return parser
+
+
 class Server:
-    def __init__(self, host='localhost', dump_file_name=DUMP_FILE_NAME, port=5055, debug=True):
+    def __init__(self, host='localhost',
+                 dump_file_name=DUMP_FILE_NAME,
+                 port=5055,
+                 debug=True,
+                 time_to_check_snapshot=10
+                 ):
         self.app = Flask(__name__)
         self.host = host
         self.port = port
         self.db_file_name = dump_file_name
         self.db = load_database(self.db_file_name)
-
+        self.time_to_check_snapshot = time_to_check_snapshot
         self.write_count = 0
         self.last_snapshot_time = 0
         self.debug = debug
@@ -190,16 +206,17 @@ class Server:
         if not multi:
             self.app.run(host=self.host, port=self.port, debug=self.debug)
         else:
-            @self.scheduler.task('interval', id='backup_job_1', seconds=10, misfire_grace_time=900)
+            @self.scheduler.task('interval', id='backup_job_1', seconds=self.time_to_check_snapshot,
+                                 misfire_grace_time=900)
             def task_dump_after_10_seconds():
                 print('write_count:', self.write_count)
                 if self.write_count > 10:
-                    dump_database(db=self.db)
+                    dump_database(db=self.db, dump_file_name=self.db_file_name)
                     print('snapshots: Db Snapshot Taken')
                     self.write_count = 0
                     self.last_snapshot_time = get_current_time()
                 elif self.write_count and get_current_time() - self.last_snapshot_time > TIME_DELTA_TO_FORCE_SNAPSHOT:
-                    dump_database(db=self.db)
+                    dump_database(db=self.db, dump_file_name=self.db_file_name)
                     print('snapshots: Force Db Snapshot Taken')
                     self.write_count = 0
                     self.last_snapshot_time = get_current_time()
@@ -263,5 +280,10 @@ class Client:
 
 
 if __name__ == '__main__':
-    server = Server()
+    options, args = option_parsers().parse_args()
+    print(options.host)
+    server = Server(host=options.host,
+                    port=options.port,
+                    time_to_check_snapshot=options.time_to_check_snapshot
+                    )
     server.run(multi=True)
