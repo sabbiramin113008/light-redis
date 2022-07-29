@@ -56,6 +56,10 @@ class ClientTest(unittest.TestCase):
     def test_save(self):
         print(client.save())
 
+    def test_smembers(self):
+        key = "mma"
+        print(client.smembers(key))
+
 
 if __name__ == '__main__':
     unittest.main()
