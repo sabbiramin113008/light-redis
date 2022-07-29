@@ -2,6 +2,13 @@
 
 `Light-Redis` is a Redis Like Data Structure Database (Server and Client) Based on `Python Dict` and `Flask`
 
+## Current Features:
+1. A Server for interacting incoming Client Requests.
+2. A Python Client for interacting with the Server and the database.
+3. A Scheduler that takes snapshot of the database and stores it to disk.
+4. A CLI with Completion Help. 
+5. Redis Like Commands ( Currently, there are few, but I will eventually mimic all ISA :D )
+
 ## Starting the `server` from the CLI
 
 When the `server` is started it initially looks for previous snapshots in the directory it is
@@ -101,7 +108,8 @@ cli.py
 ```
 
 This will start a `repl` like toy shell that would use the
-`python client` for the interaction with the database.
+`python client` for the interaction with the database. As a typing 
+completion support, `prompt-toolkit` is used. Let's have a look. 
 
 ```bash
 nemo@nautilus:~/Documents/kontainer/personal/pyproject/light-redis$ python cli.py 
