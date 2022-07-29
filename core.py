@@ -140,7 +140,7 @@ class Server:
                     mset.add(val)
                     new_list = list(mset)
                     self.db[key] = {
-                        'val': mset,
+                        'val': new_list,
                         'cmd': cmd,
                         'created': get_current_time(),
                     }
@@ -154,7 +154,26 @@ class Server:
             self.write_count = 11
             return jsonify(OK), 200
 
-        self.command_handler = {'set': _set, 'get': _get, 'info': _info, 'sadd': _sadd, 'save': _save}
+        def _smembers(request):
+            key = parse_request(request, 'key')
+            if key:
+                try:
+                    if self.db[key] and self.db[key]['cmd'] == 'sadd':
+                        new_value = self.db[key]['val']
+                        return jsonify(new_value), 200
+                    else:
+                        return jsonify(WRONG_TYPE), 400
+                except Exception as e:
+                    return jsonify(ERROR), 400
+            return jsonify(ERROR), 400
+
+        self.command_handler = {'set': _set,
+                                'get': _get,
+                                'info': _info,
+                                'sadd': _sadd,
+                                'save': _save,
+                                'smembers': _smembers
+                                }
 
         def handler():
             cmd = parse_request(request, 'cmd')
@@ -234,6 +253,11 @@ class Client:
 
     def save(self):
         body = {"cmd": "save"}
+        resp = self.call(body)
+        return resp
+
+    def smembers(self, key: str):
+        body = {"cmd": "smembers", "key": key}
         resp = self.call(body)
         return resp
 
