@@ -19,16 +19,15 @@ into the python code.
 
 To start the server, just run
 
-``` python
+```bash
 python lightredis.py --host <host> --port <port> --dump_file_name <dump_database_file_name> --time_to_check_snapshot <time_to_check_snapshot>
 
 ```
 
 to set it with options, or simply
 
-```python
-python
-lightredis.py
+```bash
+python lightredis.py
 ```
 
 ## Interacting the Database with `Python Client`
@@ -95,16 +94,14 @@ So, literally, this is the same example, that can be done with the `python-clien
 
 To start the `cli` just run,
 
-```python
-python
-cli.py - -url < url > 
+```bash
+python cli.py - -url < url > 
 ```
 
 or simply
 
-```python
-python
-cli.py
+```bash
+python cli.py
 ```
 
 This will start a `repl` like toy shell that would use the
