@@ -48,6 +48,11 @@ class ClientTest(unittest.TestCase):
         value = "WOW"
         print(client.get(key))
 
+    def test_sadd(self):
+        key = "wwe:star"
+        value = "Shawn Michaels"
+        print(client.sadd(key, value))
+
 
 if __name__ == '__main__':
     unittest.main()

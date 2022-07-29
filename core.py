@@ -221,6 +221,11 @@ class Client:
         resp = self.call(body)
         return resp
 
+    def sadd(self, key: str, value: str):
+        body = {"cmd": "sadd", "key": key, "value": value}
+        resp = self.call(body)
+        return resp
+
 
 if __name__ == '__main__':
     server = Server()
