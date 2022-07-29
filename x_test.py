@@ -7,16 +7,25 @@ email: sabbir.amin@goava.com, sabbiramin.cse11ruet@gmail.com
 
 """
 
-import requests
+mlist = set()
+mlist.add('meo')
+mlist.discard('meo')
+mlist.add('meao')
 
-url = "http://localhost:5055/"
+mlist.remove('meao')
+mlist.add('meao')
+aa = list(mlist)
+ss = set(aa)
 
-payload = {
-    "cmd": "get",
-    "key": "hello"
+print(ss, type(ss))
+
+print(mlist, len(mlist))
+import json
+import codecs
+
+print(type(list(mlist)))
+m = {
+    'my:set': list(mlist)
 }
-headers = {"Content-Type": "application/json"}
-
-response = requests.request("POST", url, json=payload, headers=headers)
-
-print(response.json())
+with codecs.open('m.json', 'w', 'utf-8') as f:
+    json.dump(m, f, ensure_ascii=False, indent=1)
