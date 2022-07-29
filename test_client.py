@@ -8,7 +8,7 @@ email: sabbiramin.cse11ruet@gmail.com, sabbir.amin@goava.com
 """
 import json
 import unittest
-from core import Client
+from lightredis import Client
 
 client = Client()
 
