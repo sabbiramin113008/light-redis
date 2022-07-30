@@ -18,6 +18,7 @@ command_set['info'] = {'Returns the Information of the System'}
 command_set['sadd'] = {'key value': None}
 command_set['save'] = {'Immediately Schedules to take a DB Snapshot': None}
 command_set['smembers'] = {'key': None}
+command_set['sismember'] = {'key value': None}
 
 completer = NestedCompleter.from_nested_dict(data=command_set)
 
@@ -68,6 +69,9 @@ def cmd_execute(client, text):
     elif cmd == 'smembers':
         maps = reverse_parse(text, ['cmd', 'key'])
         return client.smembers(key=maps.key)
+    elif cmd == 'sismember':
+        maps = reverse_parse(text,['cmd','key','value'])
+        return client.sismember(key=maps.key,value=maps.value)
     else:
         return "INVALID_COMMAND_KEY"
 

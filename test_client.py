@@ -57,8 +57,13 @@ class ClientTest(unittest.TestCase):
         print(client.save())
 
     def test_smembers(self):
-        key = "mma"
+        key = "os"
         print(client.smembers(key))
+
+    def test_sismember(self):
+        key = "os"
+        value = "linux"
+        print(client.sismember(key, value))
 
 
 if __name__ == '__main__':

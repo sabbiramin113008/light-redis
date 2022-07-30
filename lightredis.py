@@ -183,12 +183,30 @@ class Server:
                     return jsonify(ERROR), 400
             return jsonify(ERROR), 400
 
+        def _sismember(request):
+            key = parse_request(request, 'key')
+            val = parse_request(request, 'value')
+            if key:
+                try:
+                    if self.db[key] and self.db[key]['cmd'] == 'sadd':
+                        new_value = self.db[key]['val']
+                        if val in new_value:
+                            return jsonify(OK), 200
+                        else:
+                            return jsonify(ERROR), 200
+                    else:
+                        return jsonify(WRONG_TYPE), 400
+                except Exception as e:
+                    return jsonify(ERROR), 400
+            return jsonify(ERROR), 400
+
         self.command_handler = {'set': _set,
                                 'get': _get,
                                 'info': _info,
                                 'sadd': _sadd,
                                 'save': _save,
-                                'smembers': _smembers
+                                'smembers': _smembers,
+                                'sismember': _sismember
                                 }
 
         def handler():
@@ -275,6 +293,11 @@ class Client:
 
     def smembers(self, key: str):
         body = {"cmd": "smembers", "key": key}
+        resp = self.call(body)
+        return resp
+
+    def sismember(self, key: str, value: str):
+        body = {"cmd": "sismember", "key": key, "value": value}
         resp = self.call(body)
         return resp
 
