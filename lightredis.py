@@ -66,7 +66,8 @@ class Server:
                  dump_file_name=DUMP_FILE_NAME,
                  port=5055,
                  debug=True,
-                 time_to_check_snapshot=10
+                 time_to_check_snapshot=10,
+                 max_write_count_to_save = 10
                  ):
         self.app = Flask(__name__)
         self.host = host
@@ -74,6 +75,7 @@ class Server:
         self.db_file_name = dump_file_name
         self.db = load_database(self.db_file_name)
         self.time_to_check_snapshot = time_to_check_snapshot
+        self.max_write_count_to_save = max_write_count_to_save
         self.write_count = 0
         self.last_snapshot_time = 0
         self.debug = debug
@@ -167,7 +169,7 @@ class Server:
         def _save(request):
             cmd = parse_request(request, 'cmd')
             # Now we don't want to save the file immediately, we just increment the self.write_count to 10
-            self.write_count = 11
+            self.write_count = self.max_write_count_to_save
             return jsonify(OK), 200
 
         def _smembers(request):
