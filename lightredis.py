@@ -67,7 +67,7 @@ class Server:
                  port=5055,
                  debug=True,
                  time_to_check_snapshot=10,
-                 max_write_count_to_save = 10
+                 max_write_count_to_save=10
                  ):
         self.app = Flask(__name__)
         self.host = host
@@ -202,13 +202,28 @@ class Server:
                     return jsonify(ERROR), 400
             return jsonify(ERROR), 400
 
+        def _scard(request):
+            key = parse_request(request, 'key')
+            if key:
+                try:
+                    if self.db[key] and self.db[key]['cmd'] == 'sadd':
+                        new_value = self.db[key]['val']
+                        return jsonify(len(new_value)), 200
+                    else:
+                        return jsonify(WRONG_TYPE), 400
+                except Exception as e:
+                    return jsonify(ERROR), 400
+            return jsonify(ERROR), 400
+
         self.command_handler = {'set': _set,
                                 'get': _get,
                                 'info': _info,
+
                                 'sadd': _sadd,
                                 'save': _save,
                                 'smembers': _smembers,
-                                'sismember': _sismember
+                                'sismember': _sismember,
+                                'scard': _scard
                                 }
 
         def handler():
@@ -300,6 +315,11 @@ class Client:
 
     def sismember(self, key: str, value: str):
         body = {"cmd": "sismember", "key": key, "value": value}
+        resp = self.call(body)
+        return resp
+
+    def scard(self, key: str):
+        body = {"cmd": "scard", "key": key}
         resp = self.call(body)
         return resp
 
