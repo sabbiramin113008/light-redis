@@ -65,6 +65,10 @@ class ClientTest(unittest.TestCase):
         value = "linux"
         print(client.sismember(key, value))
 
+    def test_scard(self):
+        key = "curr"
+        print(client.scard(key=key))
+
 
 if __name__ == '__main__':
     unittest.main()
